@@ -34,6 +34,15 @@ jobs:
         run: |
           sed -i 's|<base href="/" />|<base href="/TodoApi.Frontend/" />|g' release/wwwroot/index.html
 
+      - name: Criar alias blazor.webassembly.js
+        run: |
+          cd release/wwwroot/_framework
+          BLAZOR_FILE=$(ls blazor.webassembly.*.js 2>/dev/null | grep -v '\.br$\|\.gz$' | head -1)
+          if [ -n "$BLAZOR_FILE" ] && [ ! -f "blazor.webassembly.js" ]; then
+            echo "Copiando $BLAZOR_FILE para blazor.webassembly.js"
+            cp "$BLAZOR_FILE" "blazor.webassembly.js"
+          fi
+
       - name: Garantir .nojekyll no output
         run: touch release/wwwroot/.nojekyll
 
