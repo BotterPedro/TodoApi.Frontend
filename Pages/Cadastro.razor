@@ -1,0 +1,86 @@
+@page "/cadastro"
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Cadastro - TodoApi</PageTitle>
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="card-title mb-4 text-center">Criar conta</h2>
+
+                @if (!string.IsNullOrWhiteSpace(_erro))
+                {
+                    <div class="alert alert-danger">@_erro</div>
+                }
+
+                <EditForm Model="_model" OnValidSubmit="FazerCadastro">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-3">
+                        <label class="form-label">Nome</label>
+                        <InputText @bind-Value="_model.Nome" class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">E-mail</label>
+                        <InputText @bind-Value="_model.Email" class="form-control" type="email" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Senha</label>
+                        <InputText @bind-Value="_model.Senha" class="form-control" type="password" />
+                        <small class="text-muted">Mínimo de 6 caracteres.</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100" disabled="@_carregando">
+                        @if (_carregando)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Cadastrar
+                    </button>
+                </EditForm>
+
+                <div class="text-center mt-3">
+                    <span>Já tem conta? </span>
+                    <a href="/login">Entrar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly RegistrarUsuarioDto _model = new();
+    private string? _erro;
+    private bool _carregando;
+
+    private async Task FazerCadastro()
+    {
+        _erro = null;
+        _carregando = true;
+
+        try
+        {
+            var resultado = await AuthService.RegistrarAsync(_model);
+
+            if (resultado is null)
+            {
+                _erro = "Não foi possível cadastrar. Verifique os dados (senha com no mínimo 6 caracteres e e-mail único).";
+                return;
+            }
+
+            Navigation.NavigateTo("/tarefas");
+        }
+        catch (Exception ex)
+        {
+            _erro = $"Erro ao cadastrar: {ex.Message}";
+        }
+        finally
+        {
+            _carregando = false;
+        }
+    }
+}

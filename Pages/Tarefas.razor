@@ -1,0 +1,320 @@
+@page "/tarefas"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject ITarefaService TarefaService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Minhas Tarefas - TodoApi</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Minhas Tarefas</h2>
+        <button class="btn btn-primary" @onclick="AbrirFormularioCriar">
+            <i class="bi bi-plus-lg"></i> Nova Tarefa
+        </button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_mensagem))
+    {
+        <div class="alert @(_mensagemErro ? "alert-danger" : "alert-success") alert-dismissible fade show">
+            @_mensagem
+            <button type="button" class="btn-close" @onclick="() => _mensagem = null"></button>
+        </div>
+    }
+
+    @* ═══════════════════════════════════════════════════════ *@
+    @* Formulário de criar/editar tarefa                       *@
+    @* ═══════════════════════════════════════════════════════ *@
+    @if (_mostrandoFormulario)
+    {
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">
+                    @(_editandoId is null ? "Nova tarefa" : "Editar tarefa")
+                </h5>
+
+                <EditForm Model="_formModel" OnValidSubmit="SalvarAsync">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-3">
+                        <label class="form-label">Título</label>
+                        <InputText @bind-Value="_formModel.Titulo" class="form-control" placeholder="Ex: Estudar Blazor" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descrição (opcional)</label>
+                        <InputTextArea @bind-Value="_formModel.Descricao" class="form-control" rows="2" />
+                    </div>
+
+                    <button type="submit" class="btn btn-success" disabled="@_salvando">
+                        @if (_salvando)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        @(_editandoId is null ? "Criar" : "Salvar")
+                    </button>
+                    <button type="button" class="btn btn-secondary ms-2" @onclick="FecharFormulario">Cancelar</button>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    @* ═══════════════════════════════════════════════════════ *@
+    @* Filtros                                                 *@
+    @* ═══════════════════════════════════════════════════════ *@
+    <div class="btn-group mb-3" role="group">
+        <button class="btn @(_filtro == FiltroTarefa.Todas ? "btn-primary" : "btn-outline-primary")"
+                @onclick="() => _filtro = FiltroTarefa.Todas">
+            Todas (@_todas.Count)
+        </button>
+        <button class="btn @(_filtro == FiltroTarefa.Pendentes ? "btn-primary" : "btn-outline-primary")"
+                @onclick="() => _filtro = FiltroTarefa.Pendentes">
+            Pendentes (@_todas.Count(t => !t.Concluida))
+        </button>
+        <button class="btn @(_filtro == FiltroTarefa.Concluidas ? "btn-primary" : "btn-outline-primary")"
+                @onclick="() => _filtro = FiltroTarefa.Concluidas">
+            Concluídas (@_todas.Count(t => t.Concluida))
+        </button>
+    </div>
+
+    @* ═══════════════════════════════════════════════════════ *@
+    @* Lista de tarefas                                        *@
+    @* ═══════════════════════════════════════════════════════ *@
+    @if (_carregando)
+    {
+        <div class="text-center py-5">
+            <span class="spinner-border text-primary"></span>
+            <p class="mt-2">Carregando tarefas...</p>
+        </div>
+    }
+    else if (!_tarefasFiltradas.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-clipboard" style="font-size:3rem"></i>
+            <p class="mt-2">Nenhuma tarefa por aqui. Clique em "Nova Tarefa" para começar!</p>
+        </div>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var tarefa in _tarefasFiltradas)
+            {
+                <div class="list-group-item d-flex align-items-start">
+                    <input type="checkbox"
+                           class="form-check-input me-3 mt-1"
+                           checked="@tarefa.Concluida"
+                           @onchange="() => AlternarConclusaoAsync(tarefa)" />
+
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="mb-1 @(tarefa.Concluida ? "text-decoration-line-through text-muted" : "")">
+                                    @tarefa.Titulo
+                                </h6>
+                                @if (!string.IsNullOrWhiteSpace(tarefa.Descricao))
+                                {
+                                    <p class="text-muted mb-1 small">@tarefa.Descricao</p>
+                                }
+                                <small class="text-muted">
+                                    Criada em @tarefa.CriadaEm.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    @if (tarefa.ConcluidaEm.HasValue)
+                                    {
+                                        <span> • Concluída em @tarefa.ConcluidaEm.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                                    }
+                                </small>
+                            </div>
+
+                            <div class="btn-group btn-group-sm ms-2">
+                                <button class="btn btn-outline-secondary" @onclick="() => AbrirFormularioEditar(tarefa)" title="Editar">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </button>
+                                <button class="btn btn-outline-danger" @onclick="() => DeletarAsync(tarefa)" title="Deletar">
+                                    <i class="bi bi-trash"></i> Excluir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<TarefaDto> _todas = new();
+    private bool _carregando = true;
+    private bool _mostrandoFormulario;
+    private bool _salvando;
+    private Guid? _editandoId;
+    private FiltroTarefa _filtro = FiltroTarefa.Todas;
+    private string? _mensagem;
+    private bool _mensagemErro;
+
+    private readonly FormModel _formModel = new();
+
+    private IEnumerable<TarefaDto> _tarefasFiltradas => _filtro switch
+    {
+        FiltroTarefa.Pendentes => _todas.Where(t => !t.Concluida),
+        FiltroTarefa.Concluidas => _todas.Where(t => t.Concluida),
+        _ => _todas
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        try
+        {
+            _todas = await TarefaService.ListarAsync();
+        }
+        catch (Exception ex)
+        {
+            MostrarMensagem($"Erro ao carregar tarefas: {ex.Message}", erro: true);
+        }
+        finally
+        {
+            _carregando = false;
+        }
+    }
+
+    private void AbrirFormularioCriar()
+    {
+        _editandoId = null;
+        _formModel.Titulo = string.Empty;
+        _formModel.Descricao = string.Empty;
+        _mostrandoFormulario = true;
+    }
+
+    private void AbrirFormularioEditar(TarefaDto tarefa)
+    {
+        _editandoId = tarefa.Id;
+        _formModel.Titulo = tarefa.Titulo;
+        _formModel.Descricao = tarefa.Descricao ?? string.Empty;
+        _mostrandoFormulario = true;
+    }
+
+    private void FecharFormulario()
+    {
+        _mostrandoFormulario = false;
+        _editandoId = null;
+    }
+
+    private async Task SalvarAsync()
+    {
+        _salvando = true;
+        try
+        {
+            if (_editandoId is null)
+            {
+                var dto = new CriarTarefaDto
+                {
+                    Titulo = _formModel.Titulo,
+                    Descricao = string.IsNullOrWhiteSpace(_formModel.Descricao) ? null : _formModel.Descricao
+                };
+
+                var criada = await TarefaService.CriarAsync(dto);
+                if (criada is null)
+                {
+                    MostrarMensagem("Não foi possível criar a tarefa.", erro: true);
+                    return;
+                }
+
+                MostrarMensagem("Tarefa criada com sucesso!");
+            }
+            else
+            {
+                var dto = new AtualizarTarefaDto
+                {
+                    Titulo = _formModel.Titulo,
+                    Descricao = string.IsNullOrWhiteSpace(_formModel.Descricao) ? null : _formModel.Descricao
+                };
+
+                var atualizada = await TarefaService.AtualizarAsync(_editandoId.Value, dto);
+                if (atualizada is null)
+                {
+                    MostrarMensagem("Não foi possível atualizar a tarefa.", erro: true);
+                    return;
+                }
+
+                MostrarMensagem("Tarefa atualizada!");
+            }
+
+            FecharFormulario();
+            await CarregarAsync();
+        }
+        catch (Exception ex)
+        {
+            MostrarMensagem($"Erro: {ex.Message}", erro: true);
+        }
+        finally
+        {
+            _salvando = false;
+        }
+    }
+
+    private async Task AlternarConclusaoAsync(TarefaDto tarefa)
+    {
+        try
+        {
+            if (tarefa.Concluida)
+                await TarefaService.ReabrirAsync(tarefa.Id);
+            else
+                await TarefaService.ConcluirAsync(tarefa.Id);
+
+            await CarregarAsync();
+        }
+        catch (Exception ex)
+        {
+            MostrarMensagem($"Erro: {ex.Message}", erro: true);
+        }
+    }
+
+    private async Task DeletarAsync(TarefaDto tarefa)
+    {
+        var confirmar = await JS.InvokeAsync<bool>("confirm",
+            $"Tem certeza que deseja excluir a tarefa \"{tarefa.Titulo}\"?");
+
+        if (!confirmar) return;
+
+        try
+        {
+            var sucesso = await TarefaService.DeletarAsync(tarefa.Id);
+            if (sucesso)
+            {
+                MostrarMensagem("Tarefa excluída.");
+                await CarregarAsync();
+            }
+            else
+            {
+                MostrarMensagem("Não foi possível excluir a tarefa.", erro: true);
+            }
+        }
+        catch (Exception ex)
+        {
+            MostrarMensagem($"Erro: {ex.Message}", erro: true);
+        }
+    }
+
+    private void MostrarMensagem(string texto, bool erro = false)
+    {
+        _mensagem = texto;
+        _mensagemErro = erro;
+    }
+
+    private enum FiltroTarefa
+    {
+        Todas,
+        Pendentes,
+        Concluidas
+    }
+
+    private class FormModel
+    {
+        public string Titulo { get; set; } = string.Empty;
+        public string? Descricao { get; set; }
+    }
+}

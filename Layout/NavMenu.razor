@@ -1,0 +1,96 @@
+﻿@inject IAuthService AuthService
+@inject AuthState AuthState
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">
+            <i class="bi bi-check2-square"></i> TodoApi
+        </a>
+        <button title="Menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <i class="bi bi-house-door-fill"></i> Início
+            </NavLink>
+        </div>
+
+        @if (_logado)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="tarefas">
+                    <i class="bi bi-list-task"></i> Minhas Tarefas
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3 mt-4">
+                <div class="text-muted small px-2">
+                    <i class="bi bi-person-circle"></i> Olá, <strong>@_nome</strong>
+                </div>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link text-warning" href="logout">
+                    <i class="bi bi-box-arrow-right"></i> Sair
+                </NavLink>
+            </div>
+        }
+        else
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="login">
+                    <i class="bi bi-box-arrow-in-right"></i> Entrar
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="cadastro">
+                    <i class="bi bi-person-plus"></i> Criar conta
+                </NavLink>
+            </div>
+        }
+    </nav>
+</div>
+
+@code {
+    private bool _collapseNavMenu = true;
+    private bool _logado;
+    private string? _nome;
+
+    private string? NavMenuCssClass => _collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        _collapseNavMenu = !_collapseNavMenu;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthState.OnChange += AtualizarEstado;
+        await CarregarEstadoAsync();
+    }
+
+    private async Task CarregarEstadoAsync()
+    {
+        _logado = await AuthService.EstaLogadoAsync();
+        _nome = await AuthService.ObterNomeAsync();
+        StateHasChanged();
+    }
+
+    private async void AtualizarEstado()
+    {
+        await CarregarEstadoAsync();
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnChange -= AtualizarEstado;
+    }
+}
