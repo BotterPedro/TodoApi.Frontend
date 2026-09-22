@@ -34,16 +34,17 @@ jobs:
         run: |
           sed -i 's|<base href="/" />|<base href="/TodoApi.Frontend/" />|g' release/wwwroot/index.html
 
-      - name: Adicionar .nojekyll
+      - name: Garantir .nojekyll no output
         run: touch release/wwwroot/.nojekyll
 
       - name: Copiar index.html para 404.html (SPA fallback)
         run: cp release/wwwroot/index.html release/wwwroot/404.html
 
-      - name: Upload artifact
+      - name: Upload artifact (inclui arquivos ocultos)
         uses: actions/upload-pages-artifact@v3
         with:
           path: release/wwwroot
+          include-hidden-files: true
 
   deploy:
     needs: build
