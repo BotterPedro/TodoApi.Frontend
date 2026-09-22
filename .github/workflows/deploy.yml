@@ -34,14 +34,24 @@ jobs:
         run: |
           sed -i 's|<base href="/" />|<base href="/TodoApi.Frontend/" />|g' release/wwwroot/index.html
 
-      - name: Criar alias blazor.webassembly.js
+      - name: Criar aliases para arquivos com hash
         run: |
           cd release/wwwroot/_framework
-          BLAZOR_FILE=$(ls blazor.webassembly.*.js 2>/dev/null | grep -v '\.br$\|\.gz$' | head -1)
-          if [ -n "$BLAZOR_FILE" ] && [ ! -f "blazor.webassembly.js" ]; then
-            echo "Copiando $BLAZOR_FILE para blazor.webassembly.js"
-            cp "$BLAZOR_FILE" "blazor.webassembly.js"
-          fi
+          find . -maxdepth 1 -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.dat" \) | while read f; do
+            f=$(basename "$f")
+            case "$f" in
+              *.br|*.gz) continue ;;
+            esac
+            if [[ "$f" =~ ^(.+)\.([a-z0-9]{8,})\.(js|wasm|dat)$ ]]; then
+              base="${BASH_REMATCH[1]}"
+              ext="${BASH_REMATCH[3]}"
+              target="${base}.${ext}"
+              if [ ! -f "$target" ]; then
+                cp "$f" "$target"
+                echo "Alias criado: $f -> $target"
+              fi
+            fi
+          done
 
       - name: Garantir .nojekyll no output
         run: touch release/wwwroot/.nojekyll
