@@ -6,8 +6,10 @@ Aplicação web para gerenciar tarefas, com autenticação JWT e comunicação c
 
 ## 🌐 Demo
 
-- **Front-end:** (preencha após o deploy)
+- **Front-end:** https://botterpedro.github.io/TodoApi.Frontend/
 - **API (Swagger):** https://todoapi-lhrs.onrender.com/swagger
+
+> **Nota:** os dois serviços estão em camadas gratuitas. A primeira requisição pode demorar ~30 segundos (a API no Render "dorme" após 15 min de inatividade).
 
 ## ✨ Funcionalidades
 
