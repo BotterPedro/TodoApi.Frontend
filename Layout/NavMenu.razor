@@ -8,13 +8,13 @@
         <a class="navbar-brand" href="">
             <i class="bi bi-check2-square"></i> TodoApi
         </a>
-        <button title="Menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+        <button type="button" title="Menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
     </div>
 </div>
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+<div class="@NavMenuCssClass nav-scrollable" @onclick="FecharMenu">
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
@@ -60,15 +60,20 @@
 </div>
 
 @code {
-    private bool _collapseNavMenu = true;
+    private bool _menuAberto;
     private bool _logado;
     private string? _nome;
 
-    private string? NavMenuCssClass => _collapseNavMenu ? "collapse" : null;
+    private string? NavMenuCssClass => _menuAberto ? "menu-aberto" : null;
 
     private void ToggleNavMenu()
     {
-        _collapseNavMenu = !_collapseNavMenu;
+        _menuAberto = !_menuAberto;
+    }
+
+    private void FecharMenu()
+    {
+        _menuAberto = false;
     }
 
     protected override async Task OnInitializedAsync()
