@@ -87,19 +87,20 @@
             <p class="mt-2">Carregando tarefas...</p>
         </div>
     }
-    else if (!_tarefasFiltradas.Any())
+        else if (!_tarefasFiltradas.Any())
     {
-        <div class="text-center py-5 text-muted">
+        <div class="text-center py-5 text-muted empty-state">
             <i class="bi bi-clipboard" style="font-size:3rem"></i>
             <p class="mt-2">Nenhuma tarefa por aqui. Clique em "Nova Tarefa" para começar!</p>
         </div>
     }
-    else
+        else
     {
         <div class="list-group">
-            @foreach (var tarefa in _tarefasFiltradas)
+            @foreach (var (tarefa, index) in _tarefasFiltradas.Select((t, i) => (t, i)))
             {
-                <div class="list-group-item d-flex align-items-start">
+                <div class="list-group-item tarefa-item d-flex align-items-start"
+                     style="animation-delay: @(index * 50)ms">
                     <input type="checkbox"
                            class="form-check-input me-3 mt-1"
                            checked="@tarefa.Concluida"

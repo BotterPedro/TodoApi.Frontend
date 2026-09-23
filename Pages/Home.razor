@@ -1,7 +1,97 @@
 ﻿@page "/"
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
 
-<PageTitle>Home</PageTitle>
+<PageTitle>TodoApi - Gerenciador de Tarefas</PageTitle>
 
-<h1>Hello, world!</h1>
+@if (_verificando)
+{
+    <div class="d-flex justify-content-center align-items-center vh-100">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+}
+else if (_logado)
+{
+    @* Redirecionando... *@
+}
+else
+{
+    <div class="container">
+        <div class="row justify-content-center align-items-center" style="min-height: calc(100vh - 200px);">
+            <div class="col-md-8 text-center">
+                <div class="mb-4">
+                    <i class="bi bi-check2-square text-primary" style="font-size: 5rem;"></i>
+                </div>
 
-Welcome to your new app.
+                <h1 class="display-4 fw-bold mb-3">TodoApi</h1>
+                <p class="lead text-muted mb-4">
+                    Organize suas tarefas de forma simples e eficiente.
+                    Crie, conclua e acompanhe tudo em um só lugar.
+                </p>
+
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="cadastro" class="btn btn-primary btn-lg px-4">
+                        <i class="bi bi-person-plus"></i> Criar conta
+                    </a>
+                    <a href="login" class="btn btn-outline-primary btn-lg px-4">
+                        <i class="bi bi-box-arrow-in-right"></i> Entrar
+                    </a>
+                </div>
+
+                <div class="row mt-5 pt-4">
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-lightning-charge text-warning" style="font-size: 2rem;"></i>
+                                <h5 class="card-title mt-2">Rápido</h5>
+                                <p class="card-text text-muted small">
+                                    Crie e conclua tarefas com poucos cliques.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-shield-lock text-success" style="font-size: 2rem;"></i>
+                                <h5 class="card-title mt-2">Seguro</h5>
+                                <p class="card-text text-muted small">
+                                    Autenticação JWT. Suas tarefas são só suas.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-phone text-info" style="font-size: 2rem;"></i>
+                                <h5 class="card-title mt-2">Responsivo</h5>
+                                <p class="card-text text-muted small">
+                                    Funciona em qualquer dispositivo.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _verificando = true;
+    private bool _logado;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _logado = await AuthService.EstaLogadoAsync();
+
+        if (_logado)
+        {
+            Navigation.NavigateTo("tarefas");
+            return;
+        }
+
+        _verificando = false;
+    }
+}

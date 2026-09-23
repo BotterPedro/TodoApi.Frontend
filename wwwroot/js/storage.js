@@ -9,3 +9,13 @@ window.todoApiStorage = {
         localStorage.removeItem(key);
     }
 };
+
+window.todoApiTheme = {
+    apply: function (isDark) {
+        if (isDark) {
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-bs-theme');
+        }
+    }
+};

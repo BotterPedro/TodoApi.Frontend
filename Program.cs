@@ -10,6 +10,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped<ITokenStorage, TokenStorage>();
 builder.Services.AddScoped<AuthHeaderHandler>();
 builder.Services.AddScoped<AuthState>();
+builder.Services.AddScoped<ThemeService>();
 
 builder.Services
     .AddHttpClient<ITarefaService, TarefaService>(client =>
